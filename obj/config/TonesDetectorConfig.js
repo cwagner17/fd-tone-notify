@@ -17,7 +17,7 @@ class TonesDetectorConfig {
      * @param {number} [config.lockoutTimeoutMs=5000] - Lockout timeout in milliseconds
      * @param {number} [config.minRecordingLengthSec=30] - Minimum recording length in seconds
      * @param {number} [config.maxRecordingLengthSec] - Maximum recording length in seconds
-     * @param {boolean} [config.isRecordingEnabled] - Whether recording is enabled
+     * @param {boolean|null} [config.isRecordingEnabled] - Whether recording is enabled. null/undefined = not set (use the global setting)
      * @param {Object} [config.notifications] - Notification configuration
      */
     constructor({ name, tones = [], matchThreshold = 6, tolerancePercent = 0.02, resetTimeoutMs = 7000,
@@ -80,7 +80,8 @@ class TonesDetectorConfig {
         }
 
         // Validate boolean parameters
-        if (isRecordingEnabled !== undefined && typeof isRecordingEnabled !== 'boolean') {
+        // null or undefined means "not set" so the global detection.isRecordingEnabled applies
+        if (isRecordingEnabled !== undefined && isRecordingEnabled !== null && typeof isRecordingEnabled !== 'boolean') {
             throw ErrorWithStatusCode.validation('isRecordingEnabled must be a boolean');
         }
 
@@ -96,7 +97,7 @@ class TonesDetectorConfig {
         this.lockoutTimeoutMs = lockoutTimeoutMs;
         this.minRecordingLengthSec = minRecordingLengthSec;
         this.maxRecordingLengthSec = maxRecordingLengthSec || minRecordingLengthSec * 1.5;
-        this.isRecordingEnabled = isRecordingEnabled;
+        this.isRecordingEnabled = typeof isRecordingEnabled === 'boolean' ? isRecordingEnabled : null;
         this.notifications = notificationsConfig;
     }
 

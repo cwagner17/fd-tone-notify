@@ -137,6 +137,26 @@ describe("DetectionService", function() {
         expect(detection._isRecordingEnabled(null)).to.be.true; //Should fallback to service
     });
 
+    it(`should fall back to the global isRecordingEnabled when a detector does not set it`, function() {
+        const args = DYNAMIC_TEST_ARGS[0];
+        const {TonesDetectorConfig} = require('../../obj/config/TonesDetectorConfig');
+        const common = {micInputStream: null, sampleRate: args.sampleRate, frequencyScaleFactor: args.frequencyScaleFactor, notifications: false};
+
+        // undefined at the detector level is "not set", same as null
+        let detection = new DetectionService({...common, recording: false});
+        expect(detection._isRecordingEnabled(undefined)).to.be.false;
+        detection = new DetectionService({...common, recording: null});
+        expect(detection._isRecordingEnabled(undefined)).to.be.true;
+
+        // Detector built the way bin/fdToneNotify.js builds it when the key is absent from the config
+        const unset = new TonesDetectorConfig({name: 'Unset', tones: [500, 600], isRecordingEnabled: null});
+        detection = new DetectionService({...common, recording: false});
+        expect(() => detection.addToneDetector(unset)).to.not.throw();
+        expect(detection._isRecordingEnabled(unset.isRecordingEnabled)).to.be.false;
+        detection = new DetectionService({...common, recording: true});
+        expect(detection._isRecordingEnabled(unset.isRecordingEnabled)).to.be.true;
+    });
+
     describe('File Mode Functionality', function() {
         it('should initialize in file mode without audio interface warnings', function() {
             const detection = new DetectionService({

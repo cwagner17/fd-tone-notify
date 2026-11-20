@@ -128,6 +128,28 @@ describe('TonesDetectorConfig', function() {
     });
 
 
+    describe('isRecordingEnabled', function() {
+        it('should treat an omitted value as not set (null)', function() {
+            const config = new TonesDetectorConfig({ name: 'Test Detector', tones: [800, 1200] });
+            expect(config.isRecordingEnabled).to.be.null;
+        });
+
+        it('should accept null as not set (as passed by bin/fdToneNotify.js)', function() {
+            const config = new TonesDetectorConfig({ name: 'Test Detector', tones: [800, 1200], isRecordingEnabled: null });
+            expect(config.isRecordingEnabled).to.be.null;
+        });
+
+        it('should keep explicit booleans', function() {
+            expect(new TonesDetectorConfig({ name: 'A', tones: [800], isRecordingEnabled: true }).isRecordingEnabled).to.be.true;
+            expect(new TonesDetectorConfig({ name: 'A', tones: [800], isRecordingEnabled: false }).isRecordingEnabled).to.be.false;
+        });
+
+        it('should reject non-boolean values', function() {
+            expect(() => new TonesDetectorConfig({ name: 'A', tones: [800], isRecordingEnabled: 'yes' }))
+                .to.throw(ErrorWithStatusCode, 'isRecordingEnabled must be a boolean');
+        });
+    });
+
     describe('toJSON', function() {
         it('should convert to plain object', function() {
             const config = new TonesDetectorConfig({
