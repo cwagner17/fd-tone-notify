@@ -391,6 +391,15 @@ When run for the first time FD Tone Notify will automatically create a `config/d
 :bulb: If you ever want to start with a new `default.json` config file rename your `config/` directory to `config_backup/`
 and a fresh default `config/` directory will be generated when you restart FD Tone Notify.
 
+#### Configuration Editor
+FD Tone Notify includes a browser-based editor for building and editing the config file, so you don't have to hand-edit JSON.
+ - Open `server/public/config-editor.html` directly in any browser, or start FD Tone Notify with `--web-server` and go to `http://<host>:3000/config-editor.html`.
+ - Click **Open file…** (or drag and drop) to load an existing `config/default.json`, or start from the built-in template.
+ - Add detectors, tones and pre/post-recording notifications. Validation runs as you type, using the same rules FD Tone Notify applies at startup.
+ - Click **Download config** and save the file into the `config/` directory, then restart FD Tone Notify.
+
+The editor runs entirely in your browser and never sends the config anywhere. Secrets (API keys, SMTP credentials) still belong in `config/secrets.json`.
+
 #### Config File Sections
 ##### Audio - Required
   - `inputDevice`: The hardware device FD Tone Notify should use to listen for tones and recording. On Windows `hw:1,0` will

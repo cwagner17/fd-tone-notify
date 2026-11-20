@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FD Tone Notify Config</title>
+<style>
+:root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: #d9dde3;
+    --text: #1c2026;
+    --muted: #5d6673;
+    --accent: #b3261e;
+    --accent-text: #ffffff;
+    --accent-soft: #fbe9e7;
+    --error: #b3261e;
+    --error-soft: #fdecea;
+    --warn: #8a5a00;
+    --warn-soft: #fff4d6;
+    --ok: #1e6b3a;
+    --ok-soft: #e3f4e8;
+    --code-key: #8a1c7c;
+    --code-str: #1e6b3a;
+    --code-num: #1747a6;
+    --radius: 8px;
+    --shadow: 0 1px 2px rgba(0,0,0,.06);
+    color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg: #14171b;
+        --surface: #1c2026;
+        --surface-2: #242930;
+        --border: #353b44;
+        --text: #e6e8eb;
+        --muted: #9aa3ae;
+        --accent: #ef6a5e;
+        --accent-text: #1a0c0a;
+        --accent-soft: #3a2220;
+        --error: #ff8a80;
+        --error-soft: #3a2220;
+        --warn: #f2c35b;
+        --warn-soft: #382f1a;
+        --ok: #7fd49b;
+        --ok-soft: #1b3324;
+        --code-key: #e39ad8;
+        --code-str: #8fd8a6;
+        --code-num: #8fb4ff;
+        --shadow: none;
+        color-scheme: dark;
+    }
+}
+:root[data-theme="dark"] {
+    --bg: #14171b; --surface: #1c2026; --surface-2: #242930; --border: #353b44; --text: #e6e8eb; --muted: #9aa3ae;
+    --accent: #ef6a5e; --accent-text: #1a0c0a; --accent-soft: #3a2220; --error: #ff8a80; --error-soft: #3a2220;
+    --warn: #f2c35b; --warn-soft: #382f1a; --ok: #7fd49b; --ok-soft: #1b3324; --code-key: #e39ad8; --code-str: #8fd8a6;
+    --code-num: #8fb4ff; --shadow: none; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-padding-top: 80px; }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--accent); }
+h1, h2, h3, h4 { margin: 0; line-height: 1.25; }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--surface-2); padding: 1px 4px; border-radius: 4px; }
+
+/* Toolbar */
+.toolbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+.toolbar h1 { font-size: 17px; margin-right: auto; }
+.toolbar h1 span { color: var(--muted); font-weight: 500; }
+.toolbar .group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+button, .btn {
+    font: inherit; font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+}
+button:hover { background: var(--surface-2); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+button.primary:hover { filter: brightness(1.08); background: var(--accent); }
+button.danger { color: var(--error); }
+button.small { padding: 3px 8px; font-size: 13px; }
+button.link { border: none; background: none; color: var(--accent); padding: 0; text-decoration: underline; }
+
+/* Layout */
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+}
+@media (max-width: 1080px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+}
+.side { position: sticky; top: 70px; align-self: start; max-height: calc(100vh - 90px); display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 1080px) { .side { position: static; max-height: none; } }
+
+.banner {
+    grid-column: 1 / -1;
+    padding: 10px 14px; border-radius: var(--radius);
+    background: var(--surface); border: 1px solid var(--border);
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+}
+.banner.info { background: var(--ok-soft); border-color: transparent; }
+.banner.error { background: var(--error-soft); border-color: transparent; color: var(--error); }
+
+nav.sections { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+nav.sections a {
+    text-decoration: none; color: var(--muted); font-size: 14px;
+    padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+}
+nav.sections a:hover { color: var(--text); }
+
+section.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+    margin-bottom: 18px;
+}
+section.panel > header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+section.panel > header h2 { font-size: 18px; }
+section.panel > header .tag { font-size: 12px; color: var(--muted); }
+section.panel > p.lead { margin: 2px 0 14px; color: var(--muted); font-size: 14px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px 16px; }
+.grid .wide { grid-column: 1 / -1; }
+
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-size: 13px; font-weight: 600; }
+.field label .opt { font-weight: 400; color: var(--muted); }
+.field .hint { font-size: 12px; color: var(--muted); }
+.field .err { font-size: 12px; color: var(--error); }
+input[type=text], input[type=number], input[type=url], input[type=password], input[type=email], select, textarea {
+    font: inherit; font-size: 14px;
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+}
+textarea { resize: vertical; min-height: 64px; }
+textarea.code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+[aria-invalid="true"] { border-color: var(--error) !important; background: var(--error-soft); }
+[data-warn="true"] { border-color: var(--warn); }
+
+/* Detectors */
+details.detector {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    background: var(--surface);
+}
+details.detector > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 12px 14px;
+}
+details.detector > summary::-webkit-details-marker { display: none; }
+details.detector > summary::before {
+    content: "▸"; color: var(--muted); width: 10px; transition: transform .15s;
+}
+details.detector[open] > summary::before { transform: rotate(90deg); }
+details.detector[open] > summary { border-bottom: 1px solid var(--border); }
+.det-title { font-weight: 600; }
+.det-tones { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--muted); }
+.det-badges { margin-left: auto; display: flex; gap: 6px; }
+.badge { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.badge.error { background: var(--error-soft); color: var(--error); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.det-body { padding: 16px 14px; }
+.det-body h3 { font-size: 15px; margin: 18px 0 4px; }
+.det-body h3:first-child { margin-top: 0; }
+.det-body p.sub { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+.det-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+.det-actions .spacer { flex: 1; }
+
+.phases { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 820px) { .phases { grid-template-columns: 1fr; } }
+.phase { background: var(--surface-2); border-radius: var(--radius); padding: 12px; min-width: 0; }
+.phase > h4 { font-size: 14px; }
+.phase > p { font-size: 12px; color: var(--muted); margin: 2px 0 10px; }
+.kind { margin-top: 12px; }
+.kind-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.kind-head span { font-size: 13px; font-weight: 600; }
+.kind-head span em { font-style: normal; color: var(--muted); font-weight: 400; }
+.item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; margin-bottom: 8px;
+    display: grid; gap: 8px;
+}
+.item-head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); }
+.tokens { display: flex; flex-wrap: wrap; gap: 4px; }
+.tokens button { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 1px 6px; }
+
+.empty { font-size: 13px; color: var(--muted); padding: 14px; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius); }
+
+/* Side panel */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.card > header h2 { font-size: 15px; }
+.status { font-size: 13px; padding: 2px 10px; border-radius: 999px; }
+.status.ok { background: var(--ok-soft); color: var(--ok); }
+.status.error { background: var(--error-soft); color: var(--error); }
+.status.warn { background: var(--warn-soft); color: var(--warn); }
+ul.issues { list-style: none; margin: 0; padding: 6px; max-height: 260px; overflow: auto; }
+ul.issues li { padding: 6px 8px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; gap: 8px; }
+ul.issues li:hover { background: var(--surface-2); }
+ul.issues li .lvl { flex: none; font-weight: 700; width: 14px; text-align: center; }
+ul.issues li.error .lvl { color: var(--error); }
+ul.issues li.warn .lvl { color: var(--warn); }
+ul.issues li .where { color: var(--muted); display: block; font-size: 12px; }
+ul.issues li.none { cursor: default; color: var(--ok); }
+.preview-card { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+pre.preview {
+    margin: 0; padding: 12px 14px; overflow: auto; flex: 1; min-height: 200px; max-height: 60vh;
+    font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre;
+}
+@media (max-width: 1080px) { pre.preview { max-height: 480px; } }
+pre.preview .k { color: var(--code-key); }
+pre.preview .s { color: var(--code-str); }
+pre.preview .n { color: var(--code-num); }
+.filename { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--muted); }
+
+dialog {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); color: var(--text);
+    width: min(720px, calc(100vw - 32px)); padding: 18px;
+}
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog h2 { font-size: 17px; margin-bottom: 8px; }
+dialog textarea { min-height: 320px; }
+dialog .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+.toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: var(--bg);
+    padding: 8px 16px; border-radius: 6px; font-size: 14px;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+    z-index: 100;
+}
+.toast.show { opacity: 1; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+    <h1>FD Tone Notify <span>· Config Editor</span></h1>
+    <div class="group">
+        <button type="button" data-action="new">New</button>
+        <button type="button" data-action="import">Open file…</button>
+        <button type="button" data-action="paste">Paste JSON…</button>
+        <input type="file" id="file-input" accept=".json,application/json" class="visually-hidden">
+    </div>
+    <div class="group">
+        <button type="button" data-action="copy">Copy JSON</button>
+        <button type="button" class="primary" data-action="download">Download config</button>
+    </div>
+</div>
+
+<div class="layout">
+    <div id="banner-slot" class="visually-hidden"></div>
+    <main id="form"></main>
+    <aside class="side">
+        <div class="card">
+            <header><h2>Validation</h2><span id="status" class="status ok">OK</span></header>
+            <ul class="issues" id="issues"></ul>
+        </div>
+        <div class="card preview-card">
+            <header><h2>Preview</h2><span class="filename" id="filename">default.json</span></header>
+            <pre class="preview" id="preview"></pre>
+        </div>
+    </aside>
+</div>
+
+<dialog id="paste-dialog">
+    <h2>Paste configuration JSON</h2>
+    <textarea class="code" id="paste-text" placeholder='{ "audio": { ... }, "detection": { ... } }'></textarea>
+    <div class="err" id="paste-error" style="color: var(--error); font-size: 13px;"></div>
+    <div class="row">
+        <button type="button" data-action="paste-cancel">Cancel</button>
+        <button type="button" class="primary" data-action="paste-load">Load</button>
+    </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+'use strict';
+
+// ---------------------------------------------------------------------------
+// Template & constants
+// ---------------------------------------------------------------------------
+
+const STORAGE_KEY = 'fd-tone-notify.config-editor.draft';
+
+const emptyActions = () => ({ pushbullet: [], webhooks: [], externalCommands: [], emails: [] });
+
+const TEMPLATE = {
+    audio: {
+        inputDevice: 'hw:1,0',
+        sampleRate: 44100,
+        frequencyScaleFactor: 1,
+        recordingScaleFactor: 2,
+        silenceAmplitude: 0.05,
+        channels: 1
+    },
+    detection: {
+        minRecordingLengthSec: 30,
+        maxRecordingLengthSec: 45,
+        defaultMatchThreshold: 6,
+        clarityThreshold: 0.89,
+        defaultTolerancePercent: 0.05,
+        defaultResetTimeoutMs: 5000,
+        defaultLockoutTimeoutMs: 7000,
+        isRecordingEnabled: true,
+        detectors: []
+    },
+    recording: {
+        directory: './recordings',
+        autoDeleteOlderThanDays: 7
+    },
+    coralogix: {
+        applicationName: 'FD-Tone-Notify',
+        subsystemName: 'Production'
+    },
+    email: {
+        from: '',
+        host: 'smtp-relay.brevo.com',
+        port: 465,
+        secure: true
+    }
+};
+
+const newDetector = (n) => ({
+    name: n ? `Fire Department ${n}` : 'Fire Department',
+    tones: [],
+    notifications: { preRecording: emptyActions(), postRecording: emptyActions() }
+});
+
+const PHASES = {
+    preRecording: { label: 'Pre-recording', desc: 'Sent the moment all tones match. Use a fast channel such as Pushbullet.' },
+    postRecording: { label: 'Post-recording', desc: 'Sent after the recording finishes. Includes the dispatch audio.' }
+};
+
+const COMMAND_TOKENS = ['[timestamp]', '[detectorName]', '[description]', '[tones]', '[matchAverages]', '[filename]', '[recordingRelPath]', '[custom]'];
+
+const KINDS = {
+    pushbullet: {
+        label: 'Pushbullet', single: 'Push',
+        blank: () => ({ title: '', channelTag: '', body: 'Tone Received %d' }),
+        fields: [
+            { key: 'title', label: 'Title', required: true, placeholder: 'Station 1 Tone Received' },
+            { key: 'channelTag', label: 'Channel tag', optional: true, placeholder: 'my-channel-tag', hint: 'Must be owned by the account of your Pushbullet API key.' },
+            { key: 'body', label: 'Body', required: true, hint: '%d inserts the date and time.' }
+        ]
+    },
+    emails: {
+        label: 'Email', single: 'Email',
+        blank: () => ({ to: '', subject: '', text: 'Tone Received %d' }),
+        fields: [
+            { key: 'to', label: 'To', required: true, placeholder: 'chief@example.com, 5551234567@vtext.com', hint: 'Comma separated. SMS gateway addresses work too.' },
+            { key: 'bcc', label: 'BCC', optional: true, placeholder: 'crew@example.com' },
+            { key: 'subject', label: 'Subject', required: true, placeholder: 'Station 1 Tone Received' },
+            { key: 'text', label: 'Body', required: true, type: 'textarea', hint: '%d inserts the date and time.' }
+        ]
+    },
+    webhooks: {
+        label: 'Webhook', single: 'Webhook',
+        blank: () => ({ address: '', headers: {}, custom: {} }),
+        fields: [
+            { key: 'address', label: 'URL', required: true, type: 'url', placeholder: 'https://example.com/hooks/dispatch' },
+            { key: 'headers', label: 'Headers', type: 'json', optional: true, placeholder: '{ "Authorization": "CUSTOM_ENV_VAR_AUTH_HEADER" }', hint: 'JSON object. CUSTOM_ENV_VAR_NAME is replaced with the NAME env var.' },
+            { key: 'custom', label: 'Custom payload', type: 'json', optional: true, placeholder: '{ "station": 1 }', hint: 'Sent as the "custom" field.' }
+        ]
+    },
+    externalCommands: {
+        label: 'External command', single: 'Command',
+        blank: () => ({ command: '', description: '', custom: {} }),
+        fields: [
+            { key: 'command', label: 'Command', required: true, type: 'textarea', mono: true, placeholder: 'node ./scripts/alert.js [timestamp] "[detectorName]" [recordingRelPath]', tokens: COMMAND_TOKENS },
+            { key: 'description', label: 'Description', optional: true, placeholder: 'Shown in the logs' },
+            { key: 'custom', label: 'Custom', type: 'json', optional: true, placeholder: '{ "relay": 2 }', hint: 'Passed as JSON in place of [custom].' }
+        ]
+    }
+};
+
+const SECTIONS = [
+    ['sec-audio', 'Audio'],
+    ['sec-detection', 'Detection defaults'],
+    ['sec-detectors', 'Detectors'],
+    ['sec-recording', 'Recording'],
+    ['sec-email', 'Email'],
+    ['sec-logging', 'Logging'],
+    ['sec-file', 'Save']
+];
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+
+let state = clone(TEMPLATE);
+let inputErrors = {};       // path -> message for unparseable input (bad JSON, bad tone list)
+const openDetectors = new Set([0]);
+let instanceName = '';
+let bannerHtml = '';
+let lastIssues = [];
+
+const $form = document.getElementById('form');
+const $issues = document.getElementById('issues');
+const $status = document.getElementById('status');
+const $preview = document.getElementById('preview');
+const $filename = document.getElementById('filename');
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+function esc(v) {
+    return String(v === undefined || v === null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function isObj(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+
+function splitPath(path) { return path.split('.').map(p => /^\d+$/.test(p) ? Number(p) : p); }
+
+function getPath(obj, path) {
+    return splitPath(path).reduce((o, k) => (o === undefined || o === null) ? undefined : o[k], obj);
+}
+
+function setPath(obj, path, value) {
+    const keys = splitPath(path);
+    let o = obj;
+    for (let i = 0; i < keys.length - 1; i++) {
+        if (o[keys[i]] === undefined || o[keys[i]] === null || typeof o[keys[i]] !== 'object')
+            o[keys[i]] = typeof keys[i + 1] === 'number' ? [] : {};
+        o = o[keys[i]];
+    }
+    const last = keys[keys.length - 1];
+    if (value === undefined) {
+        if (Array.isArray(o)) o.splice(last, 1); else delete o[last];
+    } else {
+        o[last] = value;
+    }
+}
+
+function round(n, d = 6) { return Math.round(n * Math.pow(10, d)) / Math.pow(10, d); }
+
+function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function storageGet() { try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; } }
+function storageSet(v) { try { localStorage.setItem(STORAGE_KEY, v); } catch (e) { /* ignore */ } }
+function storageClear() { try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ } }
+
+function detectors() { return (state.detection && Array.isArray(state.detection.detectors)) ? state.detection.detectors : []; }
+
+// Fill missing top-level sections and notification arrays so the form has something to bind to.
+// Unknown keys from an imported file are preserved untouched.
+function normalize(cfg) {
+    if (!isObj(cfg)) throw new Error('Configuration must be a JSON object');
+    if (!('audio' in cfg) && !('detection' in cfg))
+        throw new Error('This does not look like an FD Tone Notify config (no "audio" or "detection" section)');
+    ['audio', 'detection', 'recording', 'email', 'coralogix'].forEach(sec => {
+        if (!isObj(cfg[sec])) cfg[sec] = clone(TEMPLATE[sec]);
+    });
+    if (!Array.isArray(cfg.detection.detectors)) cfg.detection.detectors = [];
+    cfg.detection.detectors.forEach(d => {
+        if (!isObj(d.notifications)) d.notifications = {};
+        Object.keys(PHASES).forEach(ph => {
+            if (!isObj(d.notifications[ph])) d.notifications[ph] = {};
+            Object.keys(KINDS).forEach(k => {
+                if (!Array.isArray(d.notifications[ph][k])) d.notifications[ph][k] = [];
+            });
+        });
+    });
+    return cfg;
+}
+
+// ---------------------------------------------------------------------------
+// Field rendering
+// ---------------------------------------------------------------------------
+
+function displayValue(f, v) {
+    if (v === undefined || v === null) return '';
+    switch (f.type) {
+        case 'percent': return typeof v === 'number' ? String(round(v * 100, 4)) : String(v);
+        case 'numlist': return Array.isArray(v) ? v.join(', ') : String(v);
+        case 'json': return (isObj(v) && Object.keys(v).length === 0) ? '' : JSON.stringify(v, null, 2);
+        default: return String(v);
+    }
+}
+
+function field(f) {
+    const v = getPath(state, f.path);
+    const id = 'f-' + f.path.replace(/\./g, '-');
+    const attrs = `id="${id}" data-path="${esc(f.path)}" data-type="${f.type || 'text'}"${f.optional ? ' data-optional="1"' : ''}`;
+    const ph = f.placeholder !== undefined ? ` placeholder="${esc(f.placeholder)}"` : '';
+    let control;
+    const shown = displayValue(f, v);
+
+    if (f.type === 'bool') {
+        control = `<select ${attrs}><option value="true"${v === true ? ' selected' : ''}>Yes</option><option value="false"${v === false ? ' selected' : ''}>No</option></select>`;
+    } else if (f.type === 'tribool') {
+        control = `<select ${attrs}>
+            <option value=""${v === undefined || v === null ? ' selected' : ''}>${esc(f.inheritLabel || 'Use default')}</option>
+            <option value="true"${v === true ? ' selected' : ''}>Yes</option>
+            <option value="false"${v === false ? ' selected' : ''}>No</option></select>`;
+    } else if (f.type === 'select') {
+        control = `<select ${attrs}>${f.options.map(([val, label]) =>
+            `<option value="${esc(val)}"${String(v) === String(val) ? ' selected' : ''}>${esc(label)}</option>`).join('')}</select>`;
+    } else if (f.type === 'textarea' || f.type === 'json') {
+        const cls = (f.type === 'json' || f.mono) ? ' class="code"' : '';
+        control = `<textarea ${attrs}${cls}${ph} rows="${f.rows || 2}" spellcheck="false">${esc(shown)}</textarea>`;
+    } else {
+        const isNum = f.type === 'number' || f.type === 'percent';
+        const inputType = isNum ? 'number' : (f.type === 'url' ? 'url' : (f.type === 'password' ? 'password' : 'text'));
+        const range = (f.min !== undefined ? ` min="${f.min}"` : '') + (f.max !== undefined ? ` max="${f.max}"` : '') + (f.step !== undefined ? ` step="${f.step}"` : (isNum ? ' step="any"' : ''));
+        const extra = f.type === 'password' ? ' autocomplete="off"' : '';
+        control = `<input type="${inputType}" ${attrs}${range}${ph}${extra} value="${esc(shown)}"${isNum ? ' inputmode="decimal"' : ''} spellcheck="false">`;
+    }
+
+    const tokens = f.tokens ? `<div class="tokens" aria-label="Insert placeholder">${f.tokens.map(t =>
+        `<button type="button" class="small" data-action="token" data-target="${id}" data-token="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : '';
+
+    return `<div class="field${f.wide ? ' wide' : ''}">
+        <label for="${id}">${esc(f.label)}${f.optional ? ' <span class="opt">(optional)</span>' : ''}${f.unit ? ` <span class="opt">${esc(f.unit)}</span>` : ''}</label>
+        ${control}
+        ${tokens}
+        ${f.hint ? `<div class="hint">${f.hint}</div>` : ''}
+        <div class="err" data-err-for="${esc(f.path)}"></div>
+    </div>`;
+}
+
+function grid(fields) { return `<div class="grid">${fields.map(field).join('')}</div>`; }
+
+function panel(id, title, lead, body, tag) {
+    return `<section class="panel" id="${id}">
+        <header><h2>${title}</h2>${tag ? `<span class="tag">${tag}</span>` : ''}</header>
+        ${lead ? `<p class="lead">${lead}</p>` : ''}
+        ${body}
+    </section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Section rendering
+// ---------------------------------------------------------------------------
+
+function renderAudio() {
+    return panel('sec-audio', 'Audio', 'Most setups only need to change the input device.', grid([
+        { path: 'audio.inputDevice', label: 'Input device', placeholder: 'hw:1,0', hint: 'Windows: <code>hw:1,0</code> (system default). Linux / Pi: <code>dsnoop</code>. PulseAudio: <code>pulse:sinkname</code>.' },
+        { path: 'audio.sampleRate', label: 'Sample rate', type: 'number', unit: 'Hz', min: 1, step: 1 },
+        { path: 'audio.channels', label: 'Channels', type: 'select', options: [[1, '1 (mono)'], [2, '2 (stereo)']] },
+        { path: 'audio.silenceAmplitude', label: 'Silence amplitude', type: 'number', min: 0, max: 1, hint: 'RMS below this counts as silence. Recommended 0.05.' },
+        { path: 'audio.recordingScaleFactor', label: 'Recording scale factor', type: 'number', min: 0, hint: 'Default 2. Try 1 if recordings sound distorted.' },
+        { path: 'audio.frequencyScaleFactor', label: 'Frequency scale factor', type: 'number', min: 0, hint: 'Leave at 1. Adjust the sample rate instead.' }
+    ]));
+}
+
+function renderDetection() {
+    return panel('sec-detection', 'Detection defaults', 'Used by every detector unless that detector overrides the value.', grid([
+        { path: 'detection.defaultMatchThreshold', label: 'Match threshold', type: 'number', min: 1, max: 100, step: 1, hint: 'Samples needed to match a tone. Lower = more sensitive.' },
+        { path: 'detection.defaultTolerancePercent', label: 'Tolerance', type: 'percent', unit: '%', min: 0, max: 100, hint: '± range around each tone. 5% of 1000 Hz = 950–1050 Hz.' },
+        { path: 'detection.defaultResetTimeoutMs', label: 'Reset timeout', type: 'number', unit: 'ms', min: 0, max: 300000, step: 1, hint: 'Time allowed to match the next tone in a sequence.' },
+        { path: 'detection.defaultLockoutTimeoutMs', label: 'Lockout timeout', type: 'number', unit: 'ms', min: 0, max: 300000, step: 1, hint: 'Ignore repeat detections for this long.' },
+        { path: 'detection.minRecordingLengthSec', label: 'Min recording length', type: 'number', unit: 'sec', min: 1, max: 600 },
+        { path: 'detection.maxRecordingLengthSec', label: 'Max recording length', type: 'number', unit: 'sec', min: 1, max: 600, optional: true, hint: 'Defaults to 1.5× the minimum.' },
+        { path: 'detection.isRecordingEnabled', label: 'Record after detection', type: 'tribool', inheritLabel: 'Not set (yes)' },
+        { path: 'detection.clarityThreshold', label: 'Clarity threshold', type: 'number', min: 0, max: 1, hint: 'Pitch detection confidence (0–1). Default 0.89.' }
+    ]));
+}
+
+function defaultHint(key, fmt) {
+    const v = state.detection ? state.detection[key] : undefined;
+    if (v === undefined || v === null || v === '') return 'Default';
+    return 'Default: ' + (fmt ? fmt(v) : v);
+}
+
+function renderDetectors() {
+    const list = detectors();
+    const body = list.length
+        ? list.map(renderDetector).join('')
+        : `<div class="empty">No detectors yet. Add one for each department or station you want to monitor.<br>Not sure of the tones? Run <code>fd-tone-notify --all-tone-detector</code> while a page goes out.</div>`;
+    return panel('sec-detectors', 'Detectors', 'One detector per department or station. Tones are matched in the order listed.',
+        `<div id="detector-list">${body}</div>
+         <div style="margin-top:10px"><button type="button" class="primary" data-action="add-detector">+ Add detector</button></div>`,
+        `${list.length} configured`);
+}
+
+function countNotifications(d) {
+    let n = 0;
+    Object.keys(PHASES).forEach(ph => Object.keys(KINDS).forEach(k => {
+        const arr = getPath(d, `notifications.${ph}.${k}`);
+        if (Array.isArray(arr)) n += arr.length;
+    }));
+    return n;
+}
+
+function renderDetector(d, i) {
+    const p = `detection.detectors.${i}`;
+    const open = openDetectors.has(i) ? ' open' : '';
+    const last = detectors().length - 1;
+    return `<details class="detector" data-index="${i}"${open}>
+        <summary>
+            <span class="det-title" data-live="title-${i}">${esc(d.name || 'Unnamed detector')}</span>
+            <span class="det-tones" data-live="tones-${i}">${esc(tonesSummary(d.tones))}</span>
+            <span class="det-badges" data-live="badges-${i}"></span>
+        </summary>
+        <div class="det-body">
+            <h3>Tones</h3>
+            ${grid([
+                { path: `${p}.name`, label: 'Name', placeholder: 'Station 1' },
+                { path: `${p}.tones`, label: 'Tones', type: 'numlist', unit: 'Hz, in order', placeholder: '850, 525', hint: 'Comma separated. Example two-tone: <code>850, 525</code>.' }
+            ])}
+            <h3>Overrides</h3>
+            <p class="sub">Leave blank to use the detection defaults.</p>
+            ${grid([
+                { path: `${p}.matchThreshold`, label: 'Match threshold', type: 'number', min: 1, max: 100, step: 1, optional: true, placeholder: defaultHint('defaultMatchThreshold') },
+                { path: `${p}.tolerancePercent`, label: 'Tolerance', type: 'percent', unit: '%', min: 0, max: 100, optional: true, placeholder: defaultHint('defaultTolerancePercent', v => round(v * 100, 4) + '%') },
+                { path: `${p}.resetTimeoutMs`, label: 'Reset timeout', type: 'number', unit: 'ms', min: 0, max: 300000, step: 1, optional: true, placeholder: defaultHint('defaultResetTimeoutMs') },
+                { path: `${p}.lockoutTimeoutMs`, label: 'Lockout timeout', type: 'number', unit: 'ms', min: 0, max: 300000, step: 1, optional: true, placeholder: defaultHint('defaultLockoutTimeoutMs') },
+                { path: `${p}.minRecordingLengthSec`, label: 'Min recording', type: 'number', unit: 'sec', min: 1, max: 600, optional: true, placeholder: defaultHint('minRecordingLengthSec') },
+                { path: `${p}.maxRecordingLengthSec`, label: 'Max recording', type: 'number', unit: 'sec', min: 1, max: 600, optional: true, placeholder: defaultHint('maxRecordingLengthSec') },
+                { path: `${p}.isRecordingEnabled`, label: 'Record after detection', type: 'tribool', inheritLabel: 'Use global setting' }
+            ])}
+            <h3>Notifications</h3>
+            <div class="phases">${Object.keys(PHASES).map(ph => renderPhase(i, ph)).join('')}</div>
+            <div class="det-actions">
+                <button type="button" class="small" data-action="move-detector" data-index="${i}" data-dir="-1"${i === 0 ? ' disabled' : ''}>Move up</button>
+                <button type="button" class="small" data-action="move-detector" data-index="${i}" data-dir="1"${i === last ? ' disabled' : ''}>Move down</button>
+                <button type="button" class="small" data-action="dup-detector" data-index="${i}">Duplicate</button>
+                <span class="spacer"></span>
+                <button type="button" class="small danger" data-action="remove-detector" data-index="${i}">Delete detector</button>
+            </div>
+        </div>
+    </details>`;
+}
+
+function tonesSummary(tones) {
+    if (!Array.isArray(tones) || tones.length === 0) return 'no tones';
+    return tones.map(t => `${t} Hz`).join(' → ');
+}
+
+function renderPhase(i, ph) {
+    const p = `detection.detectors.${i}.notifications.${ph}`;
+    return `<div class="phase">
+        <h4>${PHASES[ph].label}</h4>
+        <p>${PHASES[ph].desc}</p>
+        ${Object.keys(KINDS).map(k => renderKind(p, k)).join('')}
+    </div>`;
+}
+
+function renderKind(phasePath, kind) {
+    const K = KINDS[kind];
+    const items = getPath(state, `${phasePath}.${kind}`) || [];
+    return `<div class="kind">
+        <div class="kind-head">
+            <span>${K.label}${items.length ? ` <em>· ${items.length}</em>` : ''}</span>
+            <button type="button" class="small" data-action="add-item" data-path="${phasePath}.${kind}" data-kind="${kind}">+ Add</button>
+        </div>
+        ${items.map((it, j) => `<div class="item">
+            <div class="item-head"><span>${K.single} ${j + 1}</span>
+                <button type="button" class="small danger" data-action="remove-item" data-path="${phasePath}.${kind}" data-index="${j}" aria-label="Remove ${K.single} ${j + 1}">Remove</button></div>
+            ${K.fields.map(f => field(Object.assign({}, f, { path: `${phasePath}.${kind}.${j}.${f.key}` }))).join('')}
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderRecording() {
+    return panel('sec-recording', 'Recording', 'Where dispatch audio is saved, and how long it is kept.', grid([
+        { path: 'recording.directory', label: 'Directory', placeholder: './recordings', hint: 'Created automatically if missing.' },
+        { path: 'recording.autoDeleteOlderThanDays', label: 'Delete recordings after', type: 'number', unit: 'days', min: 0, step: 1, hint: '0 keeps recordings forever. Cleanup runs at midnight.' }
+    ]), 'optional');
+}
+
+function renderEmail() {
+    return panel('sec-email', 'Email', 'Needed only for email or SMS-gateway notifications. Put the SMTP username and password in <code>secrets.json</code> as <code>FD_SMTP_USERNAME</code> and <code>FD_SMTP_PASSWORD</code>.', grid([
+        { path: 'email.from', label: 'From address', placeholder: 'alerts@example.com', hint: 'Must be a verified sender with your SMTP provider.' },
+        { path: 'email.host', label: 'SMTP host', placeholder: 'smtp-relay.brevo.com' },
+        { path: 'email.port', label: 'SMTP port', type: 'number', min: 1, max: 65535, step: 1, hint: '465 for secure SMTP.' },
+        { path: 'email.secure', label: 'Secure (TLS)', type: 'bool', hint: 'Leave on. Match the port to this setting.' }
+    ]), 'optional');
+}
+
+function renderLogging() {
+    return panel('sec-logging', 'Remote logging (Coralogix)', 'Only used when <code>FD_CORALOGIX_PRIVATE_KEY</code> is set.', grid([
+        { path: 'coralogix.applicationName', label: 'Application name' },
+        { path: 'coralogix.subsystemName', label: 'Subsystem name' }
+    ]), 'optional');
+}
+
+function renderFile() {
+    const fname = configFilename();
+    return panel('sec-file', 'Save', '', `
+        <div class="grid">
+            <div class="field">
+                <label for="instance-name">Instance name <span class="opt">(optional)</span></label>
+                <input type="text" id="instance-name" value="${esc(instanceName)}" placeholder="my-fd" spellcheck="false">
+                <div class="hint">Only for running several instances on one machine with <code>--instance-name</code>.</div>
+            </div>
+        </div>
+        <ol style="margin:14px 0 0; padding-left: 20px; font-size: 14px;">
+            <li>Click <strong>Download config</strong> and save it as <code data-live="fname">${esc(fname)}</code> in the <code>config/</code> folder next to FD Tone Notify. Back up the existing file first.</li>
+            <li>Put API keys and SMTP credentials in <code>config/secrets.json</code> (see <code>secrets.template.json</code>), never in this file.</li>
+            <li>Restart FD Tone Notify. Use <code>--test-notifications</code> to check delivery.</li>
+        </ol>`);
+}
+
+function render() {
+    $form.innerHTML =
+        `<nav class="sections" aria-label="Sections">${SECTIONS.map(([id, l]) => `<a href="#${id}">${l}</a>`).join('')}</nav>` +
+        renderAudio() + renderDetection() + renderDetectors() + renderRecording() + renderEmail() + renderLogging() + renderFile();
+    const slot = document.getElementById('banner-slot');
+    slot.className = bannerHtml ? '' : 'visually-hidden';
+    slot.style.gridColumn = '1 / -1';
+    slot.innerHTML = bannerHtml;
+    refresh();
+}
+
+// ---------------------------------------------------------------------------
+// Validation (mirrors obj/config/*.js and README guidance)
+// ---------------------------------------------------------------------------
+
+function validate() {
+    const issues = [];
+    const add = (level, path, msg, where) => issues.push({ level, path, msg, where });
+    const E = (p, m, w) => add('error', p, m, w);
+    const W = (p, m, w) => add('warn', p, m, w);
+    const blank = v => v === undefined || v === null || v === '';
+    const str = v => typeof v === 'string' && v.trim() !== '';
+
+    function num(v, path, label, o, where) {
+        o = o || {};
+        if (blank(v)) { if (o.required) E(path, `${label} is required`, where); return; }
+        if (typeof v !== 'number' || !Number.isFinite(v)) { E(path, `${label} must be a number`, where); return; }
+        if (o.int && !Number.isInteger(v)) E(path, `${label} must be a whole number`, where);
+        const fmt = o.fmt || (x => x);
+        if (o.min !== undefined && v < o.min) E(path, `${label} must be at least ${fmt(o.min)}`, where);
+        else if (o.max !== undefined && v > o.max) E(path, `${label} must be at most ${fmt(o.max)}`, where);
+    }
+    const pct = x => round(x * 100, 4) + '%';
+
+    Object.entries(inputErrors).forEach(([p, m]) => E(p, m, whereFor(p)));
+
+    // Audio
+    const a = state.audio || {};
+    if (!str(a.inputDevice)) E('audio.inputDevice', 'Input device is required', 'Audio');
+    num(a.sampleRate, 'audio.sampleRate', 'Sample rate', { required: true, min: 1, int: true }, 'Audio');
+    num(a.channels, 'audio.channels', 'Channels', { required: true, min: 1, max: 2, int: true }, 'Audio');
+    num(a.silenceAmplitude, 'audio.silenceAmplitude', 'Silence amplitude', { required: true, min: 0, max: 1 }, 'Audio');
+    num(a.recordingScaleFactor, 'audio.recordingScaleFactor', 'Recording scale factor', { min: 0 }, 'Audio');
+    num(a.frequencyScaleFactor, 'audio.frequencyScaleFactor', 'Frequency scale factor', { min: 0 }, 'Audio');
+    if (typeof a.frequencyScaleFactor === 'number' && a.frequencyScaleFactor !== 1)
+        W('audio.frequencyScaleFactor', 'Frequency scale factor should normally stay at 1', 'Audio');
+
+    // Detection defaults
+    const D = state.detection || {};
+    const dw = 'Detection defaults';
+    num(D.defaultMatchThreshold, 'detection.defaultMatchThreshold', 'Match threshold', { required: true, min: 1, max: 100 }, dw);
+    num(D.defaultTolerancePercent, 'detection.defaultTolerancePercent', 'Tolerance', { required: true, min: 0, max: 1, fmt: pct }, dw);
+    num(D.defaultResetTimeoutMs, 'detection.defaultResetTimeoutMs', 'Reset timeout', { required: true, min: 0, max: 300000 }, dw);
+    num(D.defaultLockoutTimeoutMs, 'detection.defaultLockoutTimeoutMs', 'Lockout timeout', { required: true, min: 0, max: 300000 }, dw);
+    num(D.minRecordingLengthSec, 'detection.minRecordingLengthSec', 'Min recording length', { required: true, min: 1, max: 600 }, dw);
+    num(D.maxRecordingLengthSec, 'detection.maxRecordingLengthSec', 'Max recording length', { min: 1, max: 600 }, dw);
+    num(D.clarityThreshold, 'detection.clarityThreshold', 'Clarity threshold', { min: 0, max: 1 }, dw);
+    if (typeof D.minRecordingLengthSec === 'number' && typeof D.maxRecordingLengthSec === 'number' && D.maxRecordingLengthSec < D.minRecordingLengthSec)
+        E('detection.maxRecordingLengthSec', 'Max recording length must be at least the min recording length', dw);
+    if (typeof D.defaultTolerancePercent === 'number' && D.defaultTolerancePercent > 0.2 && D.defaultTolerancePercent <= 1)
+        W('detection.defaultTolerancePercent', 'Tolerance above 20% is likely to cause false detections', dw);
+
+    // Detectors
+    const list = detectors();
+    if (list.length === 0) E('detection.detectors', 'Add at least one detector', 'Detectors');
+    const names = {};
+    let usesEmail = false;
+    let usesPushbullet = false;
+
+    list.forEach((d, i) => {
+        const p = `detection.detectors.${i}`;
+        const w = `Detector “${d.name || i + 1}”`;
+        if (!str(d.name)) E(`${p}.name`, 'Name is required', w);
+        else {
+            const key = d.name.trim().toLowerCase();
+            if (names[key] !== undefined) W(`${p}.name`, `Duplicate name (same as detector ${names[key] + 1})`, w);
+            else names[key] = i;
+        }
+        if (!inputErrors[`${p}.tones`]) {
+            if (!Array.isArray(d.tones) || d.tones.length === 0) E(`${p}.tones`, 'Enter at least one tone', w);
+            else d.tones.forEach((t, ti) => {
+                if (typeof t !== 'number' || !Number.isFinite(t)) E(`${p}.tones`, `Tone ${ti + 1} is not a number`, w);
+                else if (t <= 0) E(`${p}.tones`, `Tone ${ti + 1} must be greater than 0 Hz`, w);
+                else if (t > 20000) E(`${p}.tones`, `Tone ${ti + 1} must be at most 20000 Hz`, w);
+            });
+        }
+        num(d.matchThreshold, `${p}.matchThreshold`, 'Match threshold', { min: 1, max: 100 }, w);
+        num(d.tolerancePercent, `${p}.tolerancePercent`, 'Tolerance', { min: 0, max: 1, fmt: pct }, w);
+        num(d.resetTimeoutMs, `${p}.resetTimeoutMs`, 'Reset timeout', { min: 0, max: 300000 }, w);
+        num(d.lockoutTimeoutMs, `${p}.lockoutTimeoutMs`, 'Lockout timeout', { min: 0, max: 300000 }, w);
+        num(d.minRecordingLengthSec, `${p}.minRecordingLengthSec`, 'Min recording', { min: 1, max: 600 }, w);
+        num(d.maxRecordingLengthSec, `${p}.maxRecordingLengthSec`, 'Max recording', { min: 1, max: 600 }, w);
+
+        // Effective values (detector value falls back to the global default, as in bin/fdToneNotify.js)
+        const eff = (k, dk) => (typeof d[k] === 'number' && d[k]) ? d[k] : D[dk];
+        const effMin = eff('minRecordingLengthSec', 'minRecordingLengthSec');
+        const effMax = eff('maxRecordingLengthSec', 'maxRecordingLengthSec');
+        if (typeof effMin === 'number' && typeof effMax === 'number' && effMax < effMin)
+            E(`${p}.maxRecordingLengthSec`, `Max recording (${effMax}s) is shorter than min recording (${effMin}s)`, w);
+
+        if (Array.isArray(d.tones) && d.tones.length === 1) {
+            const tol = eff('tolerancePercent', 'defaultTolerancePercent');
+            const thr = eff('matchThreshold', 'defaultMatchThreshold');
+            if ((typeof tol === 'number' && tol > 0.01) || (typeof thr === 'number' && thr < 35))
+                W(`${p}.tones`, 'Single-tone detectors can false-trigger. Recommended: tolerance 1% and match threshold 35 or more', w);
+        }
+
+        Object.keys(PHASES).forEach(ph => {
+            Object.keys(KINDS).forEach(kind => {
+                const items = getPath(d, `notifications.${ph}.${kind}`) || [];
+                items.forEach((it, j) => {
+                    const ip = `${p}.notifications.${ph}.${kind}.${j}`;
+                    const iw = `${w} › ${PHASES[ph].label} › ${KINDS[kind].single} ${j + 1}`;
+                    if (kind === 'pushbullet') {
+                        usesPushbullet = true;
+                        if (!str(it.title)) E(`${ip}.title`, 'Title is required', iw);
+                        if (!str(it.body)) E(`${ip}.body`, 'Body is required', iw);
+                    } else if (kind === 'emails') {
+                        usesEmail = true;
+                        if (!str(it.to)) E(`${ip}.to`, '“To” is required', iw);
+                        else checkEmails(it.to, `${ip}.to`, '“To”', iw, E);
+                        if (str(it.bcc)) checkEmails(it.bcc, `${ip}.bcc`, 'BCC', iw, E);
+                        if (!str(it.subject)) E(`${ip}.subject`, 'Subject is required', iw);
+                        if (!str(it.text)) E(`${ip}.text`, 'Body is required', iw);
+                    } else if (kind === 'webhooks') {
+                        if (!str(it.address)) E(`${ip}.address`, 'URL is required', iw);
+                        else { try { new URL(it.address); } catch (e) { E(`${ip}.address`, 'Not a valid URL (include http:// or https://)', iw); } }
+                        if (isObj(it.headers)) Object.entries(it.headers).forEach(([hk, hv]) => {
+                            if (typeof hv !== 'string') E(`${ip}.headers`, `Header “${hk}” must be a string value`, iw);
+                        });
+                    } else if (kind === 'externalCommands') {
+                        if (!str(it.command)) E(`${ip}.command`, 'Command is required', iw);
+                    }
+                });
+            });
+        });
+        if (d.isRecordingEnabled === false || (d.isRecordingEnabled === undefined && D.isRecordingEnabled === false)) {
+            const post = getPath(d, 'notifications.postRecording') || {};
+            const n = Object.keys(KINDS).reduce((s, k) => s + (Array.isArray(post[k]) ? post[k].length : 0), 0);
+            if (n > 0) W(`${p}.isRecordingEnabled`, 'Recording is off, so post-recording notifications will not have audio to send', w);
+        }
+    });
+
+    // Recording
+    const R = state.recording || {};
+    if ('directory' in R && !str(R.directory)) E('recording.directory', 'Directory cannot be empty', 'Recording');
+    num(R.autoDeleteOlderThanDays, 'recording.autoDeleteOlderThanDays', 'Auto-delete age', { min: 0, int: true }, 'Recording');
+
+    // Email
+    const M = state.email || {};
+    num(M.port, 'email.port', 'SMTP port', { min: 1, max: 65535, int: true }, 'Email');
+    if (usesEmail) {
+        if (!str(M.from)) E('email.from', 'From address is required when email notifications are used', 'Email');
+        else checkEmails(M.from, 'email.from', 'From address', 'Email', E);
+        if (!str(M.host)) E('email.host', 'SMTP host is required when email notifications are used', 'Email');
+        if (blank(M.port)) E('email.port', 'SMTP port is required when email notifications are used', 'Email');
+    }
+    if (M.secure === false) W('email.secure', 'Insecure SMTP is not recommended', 'Email');
+    if (usesPushbullet)
+        add('info', '_pushbullet', 'Pushbullet notifications need FD_PUSHBULLET_API_KEY in secrets.json', 'Secrets');
+    if (usesEmail)
+        add('info', '_smtp', 'Email notifications need FD_SMTP_USERNAME and FD_SMTP_PASSWORD in secrets.json', 'Secrets');
+
+    return issues;
+}
+
+function checkEmails(list, path, label, where, E) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    list.split(',').map(s => s.trim()).forEach(addr => {
+        if (!re.test(addr)) E(path, `${label}: “${addr || '(empty)'}” is not a valid email address`, where);
+    });
+}
+
+function whereFor(path) {
+    const m = /^detection\.detectors\.(\d+)/.exec(path);
+    if (m) { const d = detectors()[Number(m[1])]; return `Detector “${(d && d.name) || Number(m[1]) + 1}”`; }
+    return path.split('.')[0];
+}
+
+// ---------------------------------------------------------------------------
+// Refresh (preview, validation, live labels) without re-rendering the form
+// ---------------------------------------------------------------------------
+
+function highlight(json) {
+    return esc(json).replace(/(&quot;(?:[^&]|&(?!quot;))*?&quot;)(\s*:)?|\b(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b|\b(true|false|null)\b/g,
+        (m, s, colon, n, lit) => {
+            if (s) return colon ? `<span class="k">${s}</span>${colon}` : `<span class="s">${s}</span>`;
+            if (n) return `<span class="n">${n}</span>`;
+            return `<span class="n">${lit}</span>`;
+        });
+}
+
+function configFilename() {
+    const n = instanceName.trim();
+    return n ? `default-${n}.json` : 'default.json';
+}
+
+function configJson() { return JSON.stringify(state, null, 2) + '\n'; }
+
+function refresh() {
+    const issues = validate();
+    lastIssues = issues;
+    const errors = issues.filter(i => i.level === 'error');
+    const warns = issues.filter(i => i.level === 'warn');
+
+    // Status chip
+    if (errors.length) { $status.className = 'status error'; $status.textContent = `${errors.length} error${errors.length > 1 ? 's' : ''}`; }
+    else if (warns.length) { $status.className = 'status warn'; $status.textContent = `${warns.length} warning${warns.length > 1 ? 's' : ''}`; }
+    else { $status.className = 'status ok'; $status.textContent = 'Ready'; }
+
+    // Issue list
+    const order = { error: 0, warn: 1, info: 2 };
+    const sorted = issues.slice().sort((a, b) => order[a.level] - order[b.level]);
+    $issues.innerHTML = sorted.length ? sorted.map((x, idx) => `<li class="${x.level}" data-issue="${idx}" tabindex="0">
+            <span class="lvl" aria-label="${x.level}">${x.level === 'error' ? '!' : x.level === 'warn' ? '▲' : 'i'}</span>
+            <span>${esc(x.msg)}<span class="where">${esc(x.where || '')}</span></span></li>`).join('')
+        : '<li class="none">No problems found.</li>';
+    $issues._sorted = sorted;
+
+    // Field-level markers
+    $form.querySelectorAll('[data-path]').forEach(el => { if (el.tagName !== 'BUTTON') { el.removeAttribute('aria-invalid'); el.removeAttribute('data-warn'); } });
+    $form.querySelectorAll('[data-err-for]').forEach(el => { el.textContent = ''; });
+    const byPath = {};
+    issues.forEach(x => { if (x.level !== 'info') (byPath[x.path] = byPath[x.path] || []).push(x); });
+    Object.entries(byPath).forEach(([path, xs]) => {
+        const el = $form.querySelector(`[data-path="${cssEsc(path)}"]:not(button)`);
+        const errEl = $form.querySelector(`[data-err-for="${cssEsc(path)}"]`);
+        const hasErr = xs.some(x => x.level === 'error');
+        if (el) el.setAttribute(hasErr ? 'aria-invalid' : 'data-warn', 'true');
+        if (errEl) { errEl.textContent = xs.map(x => x.msg).join(' · '); errEl.style.color = hasErr ? 'var(--error)' : 'var(--warn)'; }
+    });
+
+    // Detector summaries
+    detectors().forEach((d, i) => {
+        const t = $form.querySelector(`[data-live="title-${i}"]`);
+        if (t) t.textContent = (d.name && d.name.trim()) || 'Unnamed detector';
+        const tn = $form.querySelector(`[data-live="tones-${i}"]`);
+        if (tn) tn.textContent = tonesSummary(d.tones);
+        const b = $form.querySelector(`[data-live="badges-${i}"]`);
+        if (b) {
+            const prefix = `detection.detectors.${i}.`;
+            const de = issues.filter(x => x.level === 'error' && x.path.startsWith(prefix)).length;
+            const dw = issues.filter(x => x.level === 'warn' && x.path.startsWith(prefix)).length;
+            const n = countNotifications(d);
+            b.innerHTML = `<span class="badge">${n} notification${n === 1 ? '' : 's'}</span>` +
+                (de ? `<span class="badge error">${de} error${de > 1 ? 's' : ''}</span>` : '') +
+                (dw ? `<span class="badge warn">${dw} warning${dw > 1 ? 's' : ''}</span>` : '');
+        }
+    });
+
+    const fname = configFilename();
+    $filename.textContent = fname;
+    const fl = $form.querySelector('[data-live="fname"]');
+    if (fl) fl.textContent = fname;
+
+    $preview.innerHTML = highlight(configJson());
+    storageSet(JSON.stringify({ config: state, instanceName }));
+}
+
+function cssEsc(s) { return (window.CSS && CSS.escape) ? CSS.escape(s) : s.replace(/"/g, '\\"'); }
+
+// ---------------------------------------------------------------------------
+// Input handling
+// ---------------------------------------------------------------------------
+
+function applyInput(el) {
+    const path = el.dataset.path;
+    const type = el.dataset.type;
+    const optional = !!el.dataset.optional;
+    const raw = el.value;
+    delete inputErrors[path];
+    let value;
+
+    switch (type) {
+        case 'number': {
+            if (raw.trim() === '') { value = undefined; break; }
+            const n = Number(raw);
+            value = Number.isFinite(n) ? n : raw;
+            break;
+        }
+        case 'percent': {
+            if (raw.trim() === '') { value = undefined; break; }
+            const n = Number(raw);
+            value = Number.isFinite(n) ? round(n / 100, 6) : raw;
+            break;
+        }
+        case 'select': {
+            const n = Number(raw);
+            value = raw !== '' && Number.isFinite(n) ? n : raw;
+            break;
+        }
+        case 'numlist': {
+            const parts = raw.split(/[,\s]+/).filter(Boolean);
+            const bad = parts.filter(s => !Number.isFinite(Number(s)));
+            value = parts.filter(s => Number.isFinite(Number(s))).map(Number);
+            if (bad.length) inputErrors[path] = `Not a number: ${bad.join(', ')}`;
+            break;
+        }
+        case 'json': {
+            if (raw.trim() === '') { value = {}; break; }
+            try {
+                const parsed = JSON.parse(raw);
+                if (!isObj(parsed)) { inputErrors[path] = 'Must be a JSON object, e.g. { "key": "value" }'; return; }
+                value = parsed;
+            } catch (e) {
+                inputErrors[path] = 'Invalid JSON: ' + e.message;
+                return; // keep last valid value in the config
+            }
+            break;
+        }
+        case 'bool': value = raw === 'true'; break;
+        case 'tribool': value = raw === '' ? undefined : raw === 'true'; break;
+        default:
+            value = (optional && raw.trim() === '') ? undefined : raw;
+    }
+    setPath(state, path, value);
+}
+
+$form.addEventListener('input', e => {
+    const el = e.target;
+    if (el.id === 'instance-name') { instanceName = el.value.replace(/[^\w.-]/g, ''); refresh(); return; }
+    if (!el.dataset || !el.dataset.path || el.tagName === 'BUTTON') return;
+    applyInput(el);
+    refresh();
+});
+$form.addEventListener('change', e => {
+    const el = e.target;
+    if (el.tagName === 'SELECT' && el.dataset.path) { applyInput(el); refresh(); }
+});
+$form.addEventListener('toggle', e => {
+    const d = e.target;
+    if (!d.matches || !d.matches('details.detector')) return;
+    const i = Number(d.dataset.index);
+    if (d.open) openDetectors.add(i); else openDetectors.delete(i);
+}, true);
+
+// Shift tracked open-state indices when detectors are inserted/removed/moved
+function remapOpen(fn) {
+    const next = [...openDetectors].map(fn).filter(i => i !== null && i >= 0);
+    openDetectors.clear();
+    next.forEach(i => openDetectors.add(i));
+}
+
+function shiftInputErrors(fn) {
+    const next = {};
+    Object.entries(inputErrors).forEach(([p, m]) => {
+        const mm = /^detection\.detectors\.(\d+)(.*)$/.exec(p);
+        if (!mm) { next[p] = m; return; }
+        const ni = fn(Number(mm[1]));
+        if (ni !== null) next[`detection.detectors.${ni}${mm[2]}`] = m;
+    });
+    inputErrors = next;
+}
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+
+const actions = {
+    'add-detector'() {
+        const list = detectors();
+        list.push(newDetector(list.length + 1));
+        const i = list.length - 1;
+        openDetectors.add(i);
+        render();
+        const el = $form.querySelector(`details.detector[data-index="${i}"]`);
+        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); const name = el.querySelector('input'); if (name) name.focus({ preventScroll: true }); }
+    },
+    'remove-detector'(btn) {
+        const i = Number(btn.dataset.index);
+        const d = detectors()[i];
+        if (!confirm(`Delete detector “${(d && d.name) || i + 1}” and its notifications?`)) return;
+        detectors().splice(i, 1);
+        const f = x => x === i ? null : (x > i ? x - 1 : x);
+        remapOpen(f); shiftInputErrors(f);
+        render();
+    },
+    'dup-detector'(btn) {
+        const i = Number(btn.dataset.index);
+        const copy = clone(detectors()[i]);
+        copy.name = (copy.name || 'Detector') + ' (copy)';
+        detectors().splice(i + 1, 0, copy);
+        const f = x => x > i ? x + 1 : x;
+        remapOpen(f); shiftInputErrors(f);
+        openDetectors.add(i + 1);
+        render();
+    },
+    'move-detector'(btn) {
+        const i = Number(btn.dataset.index);
+        const j = i + Number(btn.dataset.dir);
+        const list = detectors();
+        if (j < 0 || j >= list.length) return;
+        [list[i], list[j]] = [list[j], list[i]];
+        const f = x => x === i ? j : (x === j ? i : x);
+        remapOpen(f); shiftInputErrors(f);
+        render();
+        const el = $form.querySelector(`details.detector[data-index="${j}"] summary`);
+        if (el) el.focus();
+    },
+    'add-item'(btn) {
+        const path = btn.dataset.path;
+        const arr = getPath(state, path);
+        const item = KINDS[btn.dataset.kind].blank();
+        if (Array.isArray(arr)) arr.push(item); else setPath(state, path, [item]);
+        render();
+        const items = $form.querySelectorAll(`[data-path^="${cssEsc(path + '.')}"]:not(button)`);
+        const n = (getPath(state, path) || []).length - 1;
+        const first = [...items].find(x => x.dataset.path.startsWith(`${path}.${n}.`));
+        if (first) first.focus();
+    },
+    'remove-item'(btn) {
+        const path = btn.dataset.path;
+        const j = Number(btn.dataset.index);
+        const arr = getPath(state, path);
+        if (!Array.isArray(arr)) return;
+        arr.splice(j, 1);
+        // drop / shift parse errors for items in this list
+        const next = {};
+        Object.entries(inputErrors).forEach(([p, m]) => {
+            if (!p.startsWith(path + '.')) { next[p] = m; return; }
+            const rest = p.slice(path.length + 1).split('.');
+            const k = Number(rest[0]);
+            if (k === j) return;
+            rest[0] = String(k > j ? k - 1 : k);
+            next[`${path}.${rest.join('.')}`] = m;
+        });
+        inputErrors = next;
+        render();
+    },
+    token(btn) {
+        const ta = document.getElementById(btn.dataset.target);
+        if (!ta) return;
+        const t = btn.dataset.token;
+        const s = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+        const e = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+        const before = ta.value.slice(0, s);
+        const pad = before && !/\s$/.test(before) ? ' ' : '';
+        ta.value = before + pad + t + ta.value.slice(e);
+        const pos = s + pad.length + t.length;
+        ta.focus();
+        ta.setSelectionRange(pos, pos);
+        applyInput(ta);
+        refresh();
+    },
+    new() {
+        if (!confirm('Start a new configuration? Unsaved changes in the editor will be lost.')) return;
+        loadConfig(clone(TEMPLATE), null);
+        detectors().push(newDetector(1));
+        normalize(state);
+        openDetectors.clear(); openDetectors.add(0);
+        bannerHtml = '';
+        render();
+    },
+    import() { document.getElementById('file-input').click(); },
+    paste() {
+        document.getElementById('paste-error').textContent = '';
+        document.getElementById('paste-dialog').showModal();
+        document.getElementById('paste-text').focus();
+    },
+    'paste-cancel'() { document.getElementById('paste-dialog').close(); },
+    'paste-load'() {
+        const text = document.getElementById('paste-text').value;
+        try {
+            loadConfig(JSON.parse(text), 'pasted JSON');
+            document.getElementById('paste-dialog').close();
+            document.getElementById('paste-text').value = '';
+        } catch (e) {
+            document.getElementById('paste-error').textContent = e.message;
+        }
+    },
+    copy() {
+        const text = configJson();
+        const done = () => toast('Config copied to clipboard');
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, fallbackCopy);
+        else fallbackCopy();
+        function fallbackCopy() {
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed. Select the preview text instead.'); }
+            ta.remove();
+        }
+    },
+    download() {
+        const errors = lastIssues.filter(i => i.level === 'error');
+        if (errors.length && !confirm(`The config has ${errors.length} error${errors.length > 1 ? 's' : ''}. FD Tone Notify may fail to start with it. Download anyway?`)) return;
+        const blob = new Blob([configJson()], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = configFilename();
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast(`Saved ${configFilename()}. Place it in the config/ folder.`);
+    },
+    'dismiss-banner'() { bannerHtml = ''; render(); }
+};
+
+document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const fn = actions[btn.dataset.action];
+    if (fn) { e.preventDefault(); fn(btn); }
+});
+
+$issues.addEventListener('click', e => focusIssue(e.target.closest('li[data-issue]')));
+$issues.addEventListener('keydown', e => { if (e.key === 'Enter') focusIssue(e.target.closest('li[data-issue]')); });
+
+function focusIssue(li) {
+    if (!li) return;
+    const issue = $issues._sorted[Number(li.dataset.issue)];
+    if (!issue) return;
+    const m = /^detection\.detectors\.(\d+)/.exec(issue.path);
+    if (m) {
+        const i = Number(m[1]);
+        if (!openDetectors.has(i)) {
+            openDetectors.add(i);
+            const d = $form.querySelector(`details.detector[data-index="${i}"]`);
+            if (d) d.open = true;
+        }
+    }
+    let el = $form.querySelector(`[data-path="${cssEsc(issue.path)}"]:not(button)`);
+    if (!el && issue.path === 'detection.detectors') el = $form.querySelector('[data-action="add-detector"]');
+    if (!el) { const sec = document.getElementById(issue.where === 'Email' ? 'sec-email' : 'sec-detectors'); if (sec) sec.scrollIntoView({ behavior: 'smooth' }); return; }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.focus({ preventScroll: true });
+}
+
+document.getElementById('file-input').addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            loadConfig(JSON.parse(reader.result), file.name);
+            const m = /^default-(.+)\.json$/.exec(file.name);
+            if (m) { instanceName = m[1]; render(); }
+        } catch (err) {
+            bannerHtml = `<div class="banner error"><span>Could not open ${esc(file.name)}: ${esc(err.message)}</span><button type="button" class="small" data-action="dismiss-banner">Dismiss</button></div>`;
+            render();
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+});
+
+// Drag & drop a config file anywhere on the page
+document.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+document.addEventListener('drop', e => {
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    e.preventDefault();
+    const dt = new DataTransfer(); dt.items.add(file);
+    const input = document.getElementById('file-input');
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change'));
+});
+
+function loadConfig(cfg, sourceLabel) {
+    const normalized = normalize(cfg);
+    state = normalized;
+    inputErrors = {};
+    openDetectors.clear();
+    if (detectors().length) openDetectors.add(0);
+    if (sourceLabel) {
+        bannerHtml = `<div class="banner info"><span>Loaded <strong>${esc(sourceLabel)}</strong> with ${detectors().length} detector${detectors().length === 1 ? '' : 's'}.</span><button type="button" class="small" data-action="dismiss-banner">Dismiss</button></div>`;
+    }
+    render();
+}
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+
+(function boot() {
+    const saved = storageGet();
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            state = normalize(parsed.config);
+            instanceName = parsed.instanceName || '';
+            bannerHtml = `<div class="banner"><span>Restored your last draft from this browser.</span><button type="button" class="small" data-action="new">Start over</button><button type="button" class="small" data-action="dismiss-banner">Dismiss</button></div>`;
+            render();
+            return;
+        } catch (e) { storageClear(); }
+    }
+    state = clone(TEMPLATE);
+    state.detection.detectors.push(newDetector(1));
+    normalize(state);
+    render();
+})();
+
+})();
+</script>
+</body>
+</html>
