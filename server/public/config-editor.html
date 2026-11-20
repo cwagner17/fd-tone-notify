@@ -267,6 +267,14 @@ dialog .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12
     z-index: 100;
 }
 .toast.show { opacity: 1; }
+.server-body { padding: 12px 14px; display: grid; gap: 10px; }
+.server-body .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.server-body .row button { flex: 1; }
+.server-body label.check { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+.server-msg { font-size: 13px; }
+.server-msg.ok { color: var(--ok); }
+.server-msg.error { color: var(--error); }
+.server-msg.muted { color: var(--muted); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>
 </head>
@@ -290,6 +298,24 @@ dialog .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12
     <div id="banner-slot" class="visually-hidden"></div>
     <main id="form"></main>
     <aside class="side">
+        <div class="card" id="server-card" hidden>
+            <header><h2>Server</h2><span class="filename" id="server-file"></span></header>
+            <div class="server-body">
+                <div class="server-msg muted" id="server-reason"></div>
+                <div id="server-controls">
+                    <div class="field">
+                        <label for="server-token">Editor token</label>
+                        <input type="password" id="server-token" autocomplete="off" spellcheck="false" placeholder="FD_CONFIG_EDITOR_TOKEN">
+                    </div>
+                    <label class="check" style="margin-top:6px"><input type="checkbox" id="server-remember"> Remember until this tab is closed</label>
+                    <div class="row" style="margin-top:10px">
+                        <button type="button" data-action="server-load">Load from server</button>
+                        <button type="button" class="primary" data-action="server-save">Save to server</button>
+                    </div>
+                </div>
+                <div class="server-msg" id="server-msg" role="status" aria-live="polite"></div>
+            </div>
+        </div>
         <div class="card">
             <header><h2>Validation</h2><span id="status" class="status ok">OK</span></header>
             <ul class="issues" id="issues"></ul>
@@ -738,7 +764,7 @@ function renderFile() {
             </div>
         </div>
         <ol style="margin:14px 0 0; padding-left: 20px; font-size: 14px;">
-            <li>Click <strong>Download config</strong> and save it as <code data-live="fname">${esc(fname)}</code> in the <code>config/</code> folder next to FD Tone Notify. Back up the existing file first.</li>
+            <li>Running with <code>--web-server</code> and <code>FD_CONFIG_EDITOR_TOKEN</code> set? Use <strong>Save to server</strong> in the Server panel. Otherwise click <strong>Download config</strong> and save it as <code data-live="fname">${esc(fname)}</code> in the <code>config/</code> folder next to FD Tone Notify. Back up the existing file first.</li>
             <li>Put API keys and SMTP credentials in <code>config/secrets.json</code> (see <code>secrets.template.json</code>), never in this file.</li>
             <li>Restart FD Tone Notify. Use <code>--test-notifications</code> to check delivery.</li>
         </ol>`);
@@ -1238,7 +1264,9 @@ const actions = {
         setTimeout(() => URL.revokeObjectURL(url), 1000);
         toast(`Saved ${configFilename()}. Place it in the config/ folder.`);
     },
-    'dismiss-banner'() { bannerHtml = ''; render(); }
+    'dismiss-banner'() { bannerHtml = ''; render(); },
+    'server-load'() { serverLoad(); },
+    'server-save'() { serverSave(false); }
 };
 
 document.addEventListener('click', e => {
@@ -1312,6 +1340,121 @@ function loadConfig(cfg, sourceLabel) {
     }
     render();
 }
+
+// ---------------------------------------------------------------------------
+// Server load / save (only when served by FD Tone Notify with --web-server)
+// ---------------------------------------------------------------------------
+
+const TOKEN_KEY = 'fd-tone-notify.config-editor.token';
+const API = 'api/config/file';
+let serverVersion = null;
+let serverFilename = null;
+const $tok = document.getElementById('server-token');
+const $remember = document.getElementById('server-remember');
+
+function serverMsg(text, kind) {
+    const el = document.getElementById('server-msg');
+    el.textContent = text || '';
+    el.className = 'server-msg' + (kind ? ' ' + kind : '');
+}
+
+function token() {
+    const t = $tok.value.trim();
+    try {
+        if ($remember.checked && t) sessionStorage.setItem(TOKEN_KEY, t);
+        else sessionStorage.removeItem(TOKEN_KEY);
+    } catch (e) { /* ignore */ }
+    return t;
+}
+
+async function api(method, body, extraHeaders) {
+    const t = token();
+    if (!t) throw new Error('Enter the editor token first.');
+    const headers = Object.assign({ Authorization: 'Bearer ' + t }, extraHeaders || {});
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    const res = await fetch(API, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined, cache: 'no-store' });
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* non-JSON */ }
+    if (!res.ok) {
+        const err = new Error((data && data.error) || `Request failed (${res.status})`);
+        err.status = res.status;
+        throw err;
+    }
+    return data;
+}
+
+function setBusy(busy) {
+    document.querySelectorAll('[data-action="server-load"],[data-action="server-save"]').forEach(b => { b.disabled = busy; });
+}
+
+async function serverLoad() {
+    if (!confirm('Load the config from the server? Unsaved changes in the editor will be replaced.')) return;
+    setBusy(true);
+    serverMsg('Loading…', 'muted');
+    try {
+        const data = await api('GET');
+        serverVersion = data.version;
+        const m = /^default-(.+)\.json$/.exec(data.filename);
+        instanceName = m ? m[1] : '';
+        loadConfig(data.config, `${data.filename} from the server`);
+        serverMsg(`Loaded ${data.filename}.`, 'ok');
+    } catch (e) {
+        serverMsg(e.message, 'error');
+    } finally { setBusy(false); }
+}
+
+async function serverSave(force) {
+    const errors = lastIssues.filter(i => i.level === 'error');
+    if (errors.length) {
+        serverMsg(`Fix the ${errors.length} error${errors.length > 1 ? 's' : ''} listed under Validation before saving to the server.`, 'error');
+        return;
+    }
+    const expected = configFilename();
+    if (serverFilename && expected !== serverFilename &&
+        !confirm(`The server is running with ${serverFilename}, but the editor's instance name would save ${expected}. The server will save to ${serverFilename}. Continue?`)) return;
+    if (!force && !serverVersion &&
+        !confirm(`Overwrite ${serverFilename || 'the config file'} on the server? The current file will be backed up first.`)) return;
+    setBusy(true);
+    serverMsg('Saving…', 'muted');
+    try {
+        const headers = (!force && serverVersion) ? { 'If-Match': serverVersion } : {};
+        const data = await api('PUT', { config: state }, headers);
+        serverVersion = data.version;
+        serverMsg(`${data.message}${data.backup ? ` Previous version saved as config/${data.backup}.` : ''}`, 'ok');
+        toast(`Saved ${data.filename} on the server`);
+    } catch (e) {
+        if (e.status === 409) {
+            serverMsg(e.message, 'error');
+            if (confirm(`${e.message}\n\nOverwrite the server copy with the editor's version?`)) { setBusy(false); return serverSave(true); }
+        } else {
+            serverMsg(e.message, 'error');
+        }
+    } finally { setBusy(false); }
+}
+
+(async function initServer() {
+    if (!/^https?:$/.test(location.protocol)) return;
+    let status;
+    try {
+        const res = await fetch('api/config/file/status', { cache: 'no-store' });
+        if (!res.ok) return;
+        status = await res.json();
+    } catch (e) { return; }
+    serverFilename = status.filename;
+    document.getElementById('server-card').hidden = false;
+    document.getElementById('server-file').textContent = status.filename;
+    const reason = document.getElementById('server-reason');
+    if (!status.enabled) {
+        reason.textContent = status.reason;
+        document.getElementById('server-controls').hidden = true;
+        return;
+    }
+    reason.textContent = 'Load and save the config file this server runs with. Changes apply after a restart.';
+    try {
+        const saved = sessionStorage.getItem(TOKEN_KEY);
+        if (saved) { $tok.value = saved; $remember.checked = true; }
+    } catch (e) { /* ignore */ }
+})();
 
 // ---------------------------------------------------------------------------
 // Boot
