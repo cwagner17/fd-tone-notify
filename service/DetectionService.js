@@ -48,7 +48,7 @@ class DetectionService extends EventEmitter{
             this.maxRecordingLengthSec = this.minRecordingLengthSec * 1.5;
         }
 
-        this.isRecordingEnabled = isRecordingEnabled === undefined ? null : isRecordingEnabled ;
+        this.isRecordingEnabled = (isRecordingEnabled === undefined || isRecordingEnabled === null) ? null : isRecordingEnabled;
         this.areNotificationsEnabled = areNotificationsEnabled;
 
         this.toneDetectors = [];
@@ -139,7 +139,7 @@ class DetectionService extends EventEmitter{
     }
 
     _isRecordingEnabled(detectorLevelIsRecordingEnabled) {
-        if (detectorLevelIsRecordingEnabled === null) {
+        if (detectorLevelIsRecordingEnabled === null || detectorLevelIsRecordingEnabled === undefined) {
             if (this.isRecordingEnabled === null) //If not specified globally return true
                 return true;
             return this.isRecordingEnabled; //Use specified global value

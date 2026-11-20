@@ -391,6 +391,36 @@ When run for the first time FD Tone Notify will automatically create a `config/d
 :bulb: If you ever want to start with a new `default.json` config file rename your `config/` directory to `config_backup/`
 and a fresh default `config/` directory will be generated when you restart FD Tone Notify.
 
+#### Configuration Editor
+FD Tone Notify includes a browser-based editor for building and editing the config file, so you don't have to hand-edit JSON.
+ - Open `server/public/config-editor.html` directly in any browser, or start FD Tone Notify with `--web-server` and go to `http://<host>:3000/config-editor.html`.
+ - Click **Open file…** (or drag and drop) to load an existing `config/default.json`, or start from the built-in template.
+ - Add detectors, tones and pre/post-recording notifications. Validation runs as you type, using the same rules FD Tone Notify applies at startup.
+ - Click **Download config** and save the file into the `config/` directory, then restart FD Tone Notify.
+
+Secrets (API keys, SMTP credentials) still belong in `config/secrets.json`, not in the config file.
+
+##### Saving to the Server
+When the editor is opened from a running instance (`--web-server`) it can load and save the config file directly. This is
+disabled until you set an editor token of at least 16 characters, either in `config/secrets.json` or as an environment variable:
+```
+"FD_CONFIG_EDITOR_TOKEN": "a-long-random-string"
+```
+Restart FD Tone Notify, open `http://<host>:3000/config-editor.html`, enter the token in the **Server** panel and use
+**Load from server** / **Save to server**.
+ - The file saved is the one the instance runs with: `config/default.json`, or `config/default-<instance>.json` with `--instance-name`.
+ - The config is validated before it is written. The previous file is copied to `config/backups/` (the last 20 are kept).
+ - If the file was changed on disk after you loaded it, you are asked before it is overwritten.
+ - Changes take effect after FD Tone Notify is restarted.
+ - After 10 wrong tokens from one address, that address is locked out for 15 minutes.
+
+:warning: The web server uses plain HTTP, so the token is sent unencrypted. Only enable this on a network you trust, or put FD Tone Notify behind an HTTPS reverse proxy.
+
+The same endpoints can be used directly. Send `Authorization: Bearer <token>`:
+ - `GET /api/config/file/status`: whether saving is enabled (no token needed)
+ - `GET /api/config/file`: returns `{filename, version, config}`
+ - `PUT /api/config/file`: body `{"config": {...}}`. Optional `If-Match: <version>` returns `409` if the file changed since it was read
+
 #### Config File Sections
 ##### Audio - Required
   - `inputDevice`: The hardware device FD Tone Notify should use to listen for tones and recording. On Windows `hw:1,0` will

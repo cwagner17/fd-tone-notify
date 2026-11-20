@@ -5,7 +5,10 @@ const SECRET_NAMES = [
     "FD_CORALOGIX_PRIVATE_KEY",
     "FD_SMTP_USERNAME",
     "FD_SMTP_PASSWORD",
+    "FD_CONFIG_EDITOR_TOKEN",
 ];
+// Secrets that are only needed for optional features. No warning is logged when these are unset.
+const OPTIONAL_SECRET_NAMES = ["FD_CONFIG_EDITOR_TOKEN"];
 const fs = require('fs');
 
 function populateSecretsEnvVar({secretsPath="config/secrets.json", forceSecretsFile=false}={}){
@@ -45,7 +48,7 @@ function populateSecretsEnvVar({secretsPath="config/secrets.json", forceSecretsF
             else
                 log.silly(`Secret ${secretName} ${!!process.env[secretName] ? "set from ENV Var" : `not found in file at ${secretsPath} or ENV Var`}.`);
         }
-        if(!process.env[secretName])
+        if(!process.env[secretName] && !OPTIONAL_SECRET_NAMES.includes(secretName))
             log.warning(`Secret ${secretName} has not been set or has an empty value`);
     });
 }

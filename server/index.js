@@ -14,6 +14,8 @@ const PUBLIC_PATH = path.join(__dirname, './public');
 const htmlPath = path.join(__dirname, './public/index.css');
 // javascript-obfuscator:disable
 const cssPath = path.join(__dirname, './public/index.html');
+// javascript-obfuscator:disable
+const configEditorPath = path.join(__dirname, './public/config-editor.html');
 
 const {startServer} = require("./server");
 const corsOptions = {
